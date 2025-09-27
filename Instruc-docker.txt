@@ -1,0 +1,100 @@
+# =============================================
+# CONFIGURACIÓN DE DOCKER PARA SQL SERVER 2022
+# Replicación Peer-to-Peer - AdventureWorks
+# =============================================
+
+# =============================================
+# 1. DESCARGAR IMAGEN OFICIAL DE SQL SERVER
+# =============================================
+
+/*
+Descarga la última versión de SQL Server 2022 para Docker desde 
+el registro oficial de Microsoft Container Registry.
+*/
+
+docker pull mcr.microsoft.com/mssql/server:2022-latest
+
+# =============================================
+# 2. CREAR Y EJECUTAR CONTENEDOR
+# =============================================
+
+/*
+Crea un contenedor Docker con las siguientes características:
+- Nombre: Repl-Docker
+- Puerto: 1539 externo → 1433 interno (puerto default de SQL Server)
+- Variables de entorno:
+  - ACCEPT_EULA=Y: Acepta los términos de licencia
+  - MSSQL_SA_PASSWORD=Admin1234*: Contraseña del usuario SA
+- Ejecuta en segundo plano (-d) como demonio
+*/
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Admin1234*" -p 1539:1433 --name Repl-Docker -d mcr.microsoft.com/mssql/server:2022-latest 
+
+
+# =============================================
+# 3. HABILITAR SQL SERVER AGENT
+# =============================================
+
+/*
+El Agente SQL Server es necesario para la replicación ya que gestiona
+los trabajos de replicación automática. Se habilita mediante mssql-conf.
+*/
+docker exec -it Repl-Docker /opt/mssql/bin/mssql-conf set sqlagent.enabled true
+
+# Reiniciar el contenedor para aplicar los cambios
+docker stop Repl-Docker
+docker start Repl-Docker
+
+# =============================================
+# 4. CONFIGURAR CARPETA DE REPLICACIÓN
+# =============================================
+
+/*
+Acceder al shell bash del contenedor para crear y configurar
+la carpeta donde se almacenarán los archivos de replicación
+(snapshots, archivos de configuración, etc.).
+*/
+docker exec -it Repl-Docker bash
+
+# Crear carpeta para datos de replicación
+mkdir /var/opt/mssql/ReplData
+
+# Dar permisos completos para evitar problemas de acceso
+chmod 777 /var/opt/mssql/ReplData
+
+# Salir del shell bash (Ctrl + D o exit)
+exit
+
+# =============================================
+# 5. COPIAR BACKUP DE ADVENTUREWORKS
+# =============================================
+
+/*
+Copiar el archivo de backup de AdventureWorks 2022 al contenedor
+para posteriormente restaurarlo y crear las dos bases de datos
+necesarias para la replicación.
+*/
+docker cp AdventureWorks2022.bak Repl-Docker:/var/opt/mssql/data
+
+# =============================================
+# 6. VERIFICACIÓN DEL CONTENEDOR
+# =============================================
+
+# Verificar que el contenedor está ejecutándose correctamente
+docker ps --filter "name=Repl-Docker"
+
+# Verificar logs del contenedor para detectar posibles errores
+docker logs Repl-Docker
+
+# =============================================
+# CONEXIÓN A SQL SERVER
+# =============================================
+
+/*
+Una vez configurado, conectarse a SQL Server usando:
+- Servidor: localhost,1539
+- Usuario: sa
+- Contraseña: Admin1234*
+
+Desde SSMS o cualquier cliente SQL para proceder con la
+restauración de la base de datos y configuración de replicación.
+*/
