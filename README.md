@@ -174,3 +174,5 @@ El uso de Docker no solo resolvió los problemas iniciales, sino que también pr
 ---
 
 **Video demostrativo:** [https://youtu.be/h2GS5vhHoh8](https://youtu.be/h2GS5vhHoh8).
+
+**Código fuente:** [https://github.com/LuisK19/Inv-Replicacion](https://github.com/LuisK19/Inv-Replicacion)
